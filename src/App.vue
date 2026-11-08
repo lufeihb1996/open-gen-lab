@@ -247,18 +247,18 @@
           <button
             type="button"
             class="lang-btn"
-            :class="{ active: lang === 'zh' }"
-            @click="setLang('zh')"
-          >
-            中文
-          </button>
-          <button
-            type="button"
-            class="lang-btn"
             :class="{ active: lang === 'en' }"
             @click="setLang('en')"
           >
             English
+          </button>
+          <button
+            type="button"
+            class="lang-btn"
+            :class="{ active: lang === 'zh' }"
+            @click="setLang('zh')"
+          >
+            中文
           </button>
         </div>
 
@@ -792,7 +792,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { CATALOG } from './catalog.js'
 
 const catalog = CATALOG
-const lang = ref('zh')
+const lang = ref('en')
 const currentTheme = ref('nebula')
 // Default to Pure Cinema Showcase Landing Page ('home')
 const currentItemId = ref('home')
@@ -1014,9 +1014,12 @@ function initTelemetry() {
       setTheme('nebula')
     }
 
-    const savedLang = localStorage.getItem('ogl_lang')
+    localStorage.removeItem('ogl_lang')
+    const savedLang = localStorage.getItem('ogl_lang_v2')
     if (savedLang === 'zh' || savedLang === 'en') {
       setLang(savedLang)
+    } else {
+      setLang('en')
     }
   } catch {
     setTheme('nebula')
@@ -1086,7 +1089,7 @@ function setLang(nextLang) {
   lang.value = nextLang
   document.documentElement.lang = nextLang === 'zh' ? 'zh-CN' : 'en'
   try {
-    localStorage.setItem('ogl_lang', nextLang)
+    localStorage.setItem('ogl_lang_v2', nextLang)
   } catch {
     // ignore
   }
