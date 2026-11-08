@@ -918,12 +918,24 @@ function cycleTheme() {
   setTheme(next.id)
 }
 
-// Real-Time Online Presence & Unique Visitor (UV) Telemetry
+// Real-Time Online Presence, Unique Visitor (UV), and Script Copy Telemetry
 const onlineUsers = ref(1)
-const totalViews = ref(1)
+const totalViews = ref(5)
 const totalCopies = ref(0)
 let presenceTimer = null
 let presenceChannel = null
+
+function detectDeviceClass() {
+  try {
+    const ua = navigator.userAgent.toLowerCase()
+    if (/iphone|ipad|ipod|android|mobile|harmonyos|phone/.test(ua)) {
+      return 'mobile'
+    }
+  } catch {
+    // ignore
+  }
+  return 'desktop'
+}
 
 function getOrCreateVisitorId() {
   try {
@@ -946,9 +958,9 @@ function getOrCreateVisitorId() {
 
 function hasBeenCountedAsUV() {
   try {
-    if (localStorage.getItem('ogl_uv_counted_v1') === '1') return true
-    if (document.cookie.includes('ogl_uv_counted_v1=1')) {
-      localStorage.setItem('ogl_uv_counted_v1', '1')
+    if (localStorage.getItem('ogl_uv_counted_v3') === '1') return true
+    if (document.cookie.includes('ogl_uv_counted_v3=1')) {
+      localStorage.setItem('ogl_uv_counted_v3', '1')
       return true
     }
   } catch {
@@ -959,46 +971,78 @@ function hasBeenCountedAsUV() {
 
 function markCountedAsUV() {
   try {
-    localStorage.setItem('ogl_uv_counted_v1', '1')
-    document.cookie = 'ogl_uv_counted_v1=1; path=/; max-age=31536000; SameSite=Lax'
+    localStorage.setItem('ogl_uv_counted_v3', '1')
+    document.cookie = 'ogl_uv_counted_v3=1; path=/; max-age=31536000; SameSite=Lax'
   } catch {
     // ignore
   }
 }
 
 const visitorId = getOrCreateVisitorId()
+const deviceClass = detectDeviceClass()
 
 async function pingTelemetry(action = 'heartbeat') {
   try {
-    const res = await fetch(`/api/telemetry?action=${encodeURIComponent(action)}&visitorId=${encodeURIComponent(visitorId)}`, {
+    const q = `action=${encodeURIComponent(action)}&visitorId=${encodeURIComponent(visitorId)}&dev=${encodeURIComponent(deviceClass)}&t=${Date.now()}`
+    const res = await fetch(`/api/telemetry?${q}`, {
       cache: 'no-store',
     })
     if (res.ok) {
       const data = await res.json()
-      if (action === 'new_visit') {
-        markCountedAsUV()
+      markCountedAsUV()
+      if (typeof data.online === 'number' && data.online >= 1) {
+        onlineUsers.value = data.online
       }
-      if (typeof data.online === 'number') onlineUsers.value = data.online
-      if (typeof data.views === 'number') totalViews.value = Math.max(totalViews.value, data.views)
-      if (typeof data.copies === 'number') totalCopies.value = Math.max(totalCopies.value, data.copies)
-      if (presenceChannel && action !== 'heartbeat') {
-        presenceChannel.postMessage({ type: 'sync', ...data })
+      if (typeof data.views === 'number' && data.views >= 1) {
+        totalViews.value = Math.max(totalViews.value, data.views)
       }
+      if (typeof data.copies === 'number' && data.copies >= 0) {
+        totalCopies.value = Math.max(totalCopies.value, data.copies)
+      }
+      if (presenceChannel) {
+        presenceChannel.postMessage({
+          type: 'sync',
+          online: onlineUsers.value,
+          views: totalViews.value,
+          copies: totalCopies.value,
+        })
+      }
+      return
     }
   } catch {
-    // Fallback if static preview without /api middleware
+    // Fallback to direct Abacus CORS API if serverless endpoint is unavailable
   }
-}
 
-function handleUnload() {
   try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(`/api/telemetry?action=leave&visitorId=${encodeURIComponent(visitorId)}`)
+    const ns = 'ogl_v3_prod_lufei'
+    if (action === 'copy') {
+      const r = await fetch(`https://abacus.jasoncameron.dev/hit/${ns}/copies_total`)
+      if (r.ok) {
+        const d = await r.json()
+        if (typeof d.value === 'number') totalCopies.value = Math.max(totalCopies.value, d.value)
+      }
     } else {
-      fetch(`/api/telemetry?action=leave&visitorId=${encodeURIComponent(visitorId)}`, { keepalive: true })
+      const [rUv, rCp] = await Promise.all([
+        fetch(`https://abacus.jasoncameron.dev/get/${ns}/uv_total`),
+        fetch(`https://abacus.jasoncameron.dev/get/${ns}/copies_total`),
+      ])
+      if (rUv.ok) {
+        const dUv = await rUv.json()
+        if (typeof dUv.value === 'number') totalViews.value = Math.max(totalViews.value, dUv.value)
+      }
+      if (rCp.ok) {
+        const dCp = await rCp.json()
+        if (typeof dCp.value === 'number') totalCopies.value = Math.max(totalCopies.value, dCp.value)
+      }
     }
   } catch {
     // ignore
+  }
+}
+
+function handleVisibilityChange() {
+  if (!document.hidden) {
+    pingTelemetry('heartbeat')
   }
 }
 
@@ -1031,8 +1075,8 @@ function initTelemetry() {
       presenceChannel.onmessage = (ev) => {
         if (ev.data?.type === 'sync') {
           if (typeof ev.data.online === 'number') onlineUsers.value = ev.data.online
-          if (typeof ev.data.views === 'number') totalViews.value = ev.data.views
-          if (typeof ev.data.copies === 'number') totalCopies.value = ev.data.copies
+          if (typeof ev.data.views === 'number') totalViews.value = Math.max(totalViews.value, ev.data.views)
+          if (typeof ev.data.copies === 'number') totalCopies.value = Math.max(totalCopies.value, ev.data.copies)
         }
       }
     } catch {
@@ -1044,13 +1088,24 @@ function initTelemetry() {
   pingTelemetry(initialAction)
 
   presenceTimer = setInterval(() => {
-    pingTelemetry('heartbeat')
-  }, 10000)
+    if (!document.hidden) {
+      pingTelemetry('heartbeat')
+    }
+  }, 8000)
 
-  window.addEventListener('beforeunload', handleUnload)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 }
 
 function recordCopyIncrement() {
+  totalCopies.value += 1
+  if (presenceChannel) {
+    presenceChannel.postMessage({
+      type: 'sync',
+      online: onlineUsers.value,
+      views: totalViews.value,
+      copies: totalCopies.value,
+    })
+  }
   pingTelemetry('copy')
 }
 
@@ -1237,7 +1292,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearUnlockListeners()
   window.removeEventListener('hashchange', syncFromHash)
-  window.removeEventListener('beforeunload', handleUnload)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (presenceTimer) clearInterval(presenceTimer)
   if (presenceChannel) presenceChannel.close()
 })
