@@ -1085,6 +1085,22 @@ td small { color: var(--dim); }
 }
 .toast.show { opacity: 1; transform: none; }
 
+.repo-link-btn {
+  white-space: normal;
+  text-align: start;
+  line-height: 1.4;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.repo-link-desc {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 1120px) {
   .dual-cinema-grid { grid-template-columns: 1fr; }
   .showcase-highlights { grid-template-columns: 1fr; }
@@ -1092,17 +1108,349 @@ td small { color: var(--dim); }
   .quick-copy-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .flow { grid-template-columns: 1fr; }
   .flow-step { border-right: 0; border-bottom: 1px solid var(--line); }
-  .flow-step:not(:last-child)::after { content: "↓"; right: auto; left: 20px; top: auto; bottom: -9px; }
+  .flow-step:not(:last-child)::after { content: "↓"; right: 16px; left: auto; top: auto; bottom: -9px; }
   .feature { grid-template-columns: 1fr; }
 }
+
 @media (max-width: 860px) {
-  .landing-navbar-inner { padding: 12px 18px; }
-  .landing-nav-links { display: none; }
-  .landing-container { padding: 24px 18px 72px; }
-  .sidebar { transform: translateX(-100%); transition: transform 0.25s var(--ease-out-expo); }
-  .sidebar.open { transform: none; box-shadow: 20px 0 60px rgba(0,0,0,0.4); }
-  .menu-btn { display: block; }
-  .main { margin-left: 0; padding: 72px 20px 80px; }
-  .stats, .quick-copy-deck { grid-template-columns: 1fr; }
-  .steps3, .info-row { grid-template-columns: 1fr; }
+  /* ---- Stage 1: Landing Page Mobile ---- */
+  .landing-navbar-inner {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .landing-navbar .logo {
+    padding: 0;
+    gap: 8px;
+  }
+  .landing-navbar .logo-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .landing-navbar .logo strong {
+    font-size: 0.92rem;
+  }
+  .landing-navbar .logo small {
+    display: none;
+  }
+  .landing-nav-actions {
+    gap: 6px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .landing-nav-actions .live-telemetry-pill {
+    padding: 4px 9px;
+    gap: 6px;
+    font-size: 0.7rem;
+  }
+  .landing-nav-actions .btn.sm {
+    padding: 5px 9px;
+    font-size: 0.74rem;
+  }
+  .nav-enter-btn {
+    display: none;
+  }
+
+  .landing-container {
+    padding: 18px 14px 56px;
+  }
+  .cinema-showcase-hero {
+    padding: 6px 0 24px;
+  }
+  .cinema-showcase-hero .eyebrow {
+    border-radius: 12px;
+    font-size: 0.72rem;
+    padding: 6px 11px;
+    line-height: 1.45;
+    max-width: 100%;
+    text-align: start;
+  }
+  .cinema-showcase-hero h1 {
+    margin: 14px 0 10px;
+    font-size: clamp(1.68rem, 7.2vw, 2.3rem);
+    line-height: 1.2;
+    max-width: 100%;
+  }
+  .cinema-showcase-hero p.lead {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+  .cinema-cta-row {
+    width: 100%;
+    margin: 18px 0 22px;
+  }
+  .btn.cta-glow {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 18px;
+    font-size: 0.92rem;
+  }
+
+  /* Video Cards on Mobile: Never block the 16:9 video frame! */
+  .dual-cinema-grid {
+    gap: 16px;
+  }
+  .cinema-video-shell {
+    padding: 6px;
+    border-radius: 18px;
+  }
+  .cinema-video-frame {
+    aspect-ratio: auto;
+    display: flex;
+    flex-direction: column;
+    border-radius: 13px;
+  }
+  .cinema-video-frame video {
+    aspect-ratio: 16 / 9;
+    width: 100%;
+    height: auto;
+  }
+  .cinema-video-overlay-top {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+  .cinema-video-overlay-top .cinema-badge {
+    padding: 3px 9px;
+    font-size: 0.62rem;
+    background: rgba(8, 10, 16, 0.62);
+  }
+  .cinema-video-overlay-top .cinema-badge:nth-child(2) {
+    display: none;
+  }
+  .cinema-video-overlay-bottom {
+    position: static;
+    padding: 10px 12px;
+    background: rgba(11, 13, 20, 0.96);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .cinema-caption {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    backdrop-filter: none;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
+    text-align: start;
+  }
+  .cinema-sound-btn {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    gap: 5px;
+  }
+
+  .showcase-highlights {
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .highlight-card {
+    padding: 16px 18px;
+    border-radius: 16px;
+  }
+  .highlight-card h3 {
+    font-size: 1rem;
+  }
+  .highlight-card p {
+    font-size: 0.82rem;
+  }
+  .landing-footer {
+    padding: 20px 16px;
+    font-size: 0.75rem;
+  }
+
+  /* ---- Stage 2: Directory & Workflow Studio Mobile ---- */
+  .sidebar {
+    width: min(286px, 84vw);
+    transform: translateX(-100%);
+    transition: transform 0.25s var(--ease-out-expo);
+    z-index: 45;
+  }
+  .sidebar.open {
+    transform: none;
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.55);
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(4, 6, 12, 0.62);
+    backdrop-filter: blur(4px);
+  }
+  .menu-btn {
+    display: grid;
+    place-items: center;
+    top: 12px;
+    left: 12px;
+    width: 38px;
+    height: 38px;
+    z-index: 50;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+  .main {
+    margin-left: 0;
+    padding: 14px 14px 72px;
+  }
+  .top-utility-bar {
+    padding-left: 46px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .crumb {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    width: 100%;
+  }
+  .top-utility-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .top-utility-actions .live-telemetry-pill {
+    font-size: 0.68rem;
+    padding: 4px 9px;
+    gap: 6px;
+  }
+  .top-utility-actions .btn.sm {
+    padding: 5px 9px;
+    font-size: 0.72rem;
+  }
+
+  /* Module Detail Hero & 2x2 Stats Grid */
+  .hero h1 {
+    font-size: 1.36rem !important;
+    line-height: 1.28;
+    margin: 10px 0 !important;
+  }
+  .hero p.lead {
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+  .tags {
+    gap: 6px;
+  }
+  .tag {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 16px !important;
+  }
+  .stat {
+    padding: 12px 14px;
+  }
+  .stat b {
+    font-size: 1.15rem;
+  }
+  .stat span {
+    font-size: 0.74rem;
+  }
+
+  /* 4 Sub-navigation Tabs: 2x2 Grid on Mobile so all 4 tabs are always visible! */
+  .tabs {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 18px 0 16px;
+    padding: 6px;
+    overflow: visible;
+  }
+  .tab {
+    padding: 9px 8px;
+    font-size: 0.76rem;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  /* Cards, Steps, Info Boxes, Tables & Code Blocks on Mobile */
+  .steps3,
+  .info-row,
+  .quick-copy-deck {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .step3,
+  .info {
+    padding: 14px;
+  }
+  .section-head {
+    margin: 28px 0 12px;
+  }
+  .section-head h2 {
+    font-size: 1.1rem;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-wrap table {
+    min-width: 580px;
+    font-size: 0.78rem;
+  }
+  th,
+  td {
+    padding: 10px 12px;
+  }
+
+  .variants {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .variant {
+    padding: 13px 14px;
+  }
+  .variant-head {
+    flex-wrap: wrap;
+    font-size: 0.88rem;
+  }
+  .flow-step {
+    padding: 13px 14px;
+  }
+  .code-bar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .code-file {
+    width: 100%;
+    font-size: 0.74rem;
+    overflow: hidden;
+  }
+  .code-file span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .code-actions {
+    width: 100%;
+  }
+  .code-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 12px;
+    font-size: 0.82rem;
+  }
+  pre.code {
+    max-height: 360px;
+    padding: 12px 14px;
+    font-size: 0.72rem;
+  }
+  .toast {
+    left: 14px;
+    right: 14px;
+    bottom: 16px;
+    text-align: center;
+  }
 }

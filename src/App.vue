@@ -45,8 +45,8 @@
               🌐 {{ lang === 'zh' ? 'EN' : '中文' }}
             </button>
 
-            <button type="button" class="btn primary sm" @click="enterDirectory">
-              🚀 {{ t('进入模型与工作流目录 →', 'Enter Workflow Directory →') }}
+            <button type="button" class="btn primary sm nav-enter-btn" @click="enterDirectory">
+              🚀 {{ t('进入目录 →', 'Directory →') }}
             </button>
           </div>
         </div>
@@ -222,10 +222,11 @@
          STAGE 2: DIRECTORY & WORKFLOW STUDIO (LEFT SIDEBAR + RIGHT MAIN)
          =================================================================== -->
     <template v-else>
-      <!-- Mobile Menu Button -->
+      <!-- Mobile Menu Button & Backdrop -->
       <button class="menu-btn" type="button" aria-label="Menu" @click="sidebarOpen = !sidebarOpen">
-        ☰
+        {{ sidebarOpen ? '✕' : '☰' }}
       </button>
+      <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
 
       <!-- Left Sidebar Directory with Collapsible Subdirectories -->
       <aside class="sidebar" :class="{ open: sidebarOpen }">
@@ -485,12 +486,12 @@
                     :href="repo.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="btn sm"
+                    class="btn sm repo-link-btn"
                     style="text-decoration: none;"
                   >
                     <span>{{ repo.url.includes('github.com') ? '🐙' : '🤗' }}</span>
                     <strong>{{ repo.name }}</strong>
-                    <span style="color: var(--muted); font-size: 0.76rem;">· {{ tr(repo.desc) }} ↗</span>
+                    <span class="repo-link-desc">· {{ tr(repo.desc) }} ↗</span>
                   </a>
                 </div>
               </div>
@@ -676,12 +677,12 @@
                     :href="repo.url"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="btn sm"
+                    class="btn sm repo-link-btn"
                     style="text-decoration: none;"
                   >
                     <span>{{ repo.url.includes('github.com') ? '🐙' : '🤗' }}</span>
                     <strong>{{ repo.name }}</strong>
-                    <span style="color: var(--muted); font-size: 0.76rem;">· {{ tr(repo.desc) }} ↗</span>
+                    <span class="repo-link-desc">· {{ tr(repo.desc) }} ↗</span>
                   </a>
                 </div>
               </div>
