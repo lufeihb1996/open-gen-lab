@@ -1216,7 +1216,7 @@ CATALOG = [
     },
     {
         "id": "image",
-        "icon": "🖼️",
+        "icon": "",
         "title": {"zh": "图像生成", "en": "Image Generation"},
         "groups": [
             {

@@ -13,7 +13,7 @@
             <span class="logo-mark">◆</span>
             <span>
               <strong>Open Gen Lab</strong>
-              <small>{{ t('开源多模态 AI 视觉与原声实验室', 'Open Multimodal AI Visual & Audio Lab') }}</small>
+              <small>{{ t('开源 2K 有声视频生成实验室', 'Open 2K Audio-Video Lab') }}</small>
             </span>
           </a>
 
@@ -57,19 +57,19 @@
         <section class="cinema-showcase-hero">
           <div class="eyebrow">
             <span class="dot"></span>
-            <span>{{ t('2026 开源多模态 AI 造物引擎 · 画面与立体声效原生同生', '2026 Open Multimodal AI Engine · Native Joint Video & Stereo Audio') }}</span>
+            <span>{{ t('MiniMax H3 + Pika Flex + NVIDIA Open-H3 2K · 开源音视频原生同生引擎', 'MiniMax H3 + Pika Flex + NVIDIA Open-H3 2K · Open Native Audio-Video Engine') }}</span>
           </div>
 
           <h1>
-            {{ t('当画面拥有 ', 'When Visuals ') }}
-            <span class="grad-text">{{ t('呼吸与咆哮', 'Breathe & Roar') }}</span>
+            {{ t('开源 2K 有声视频 ', 'Open-Source 2K Audio-Video ') }}
+            <span class="grad-text">{{ t('本地与云端一键生成', 'Local & Cloud One-Click Generation') }}</span>
           </h1>
 
           <p class="lead">
             {{
               t(
-                '告别无声视频与繁琐拼凑。探索开源音画同生大模型、零塑料感写实摄影与全曲交响合成，一键获取全部官方工作流与云端启动脚本。',
-                'Leave silent clips behind. Explore open-source native audio-visual cinema, photorealistic imaging, and full-song synthesis with ready-to-copy workflows and cloud scripts.'
+                '告别无声视频与昂贵的按秒计费。基于 MiniMax H3 官方底模、Pika Flex 6 步极速一采与英伟达 Open-H3 2K 超分精修，支持本地显卡与 Colab 云端一键部署，直出 2K 电影级音画同步成片。',
+                'Say goodbye to silent clips and costly per-second APIs. Powered by Official MiniMax H3, Pika Flex 6-step Pass 1, and NVIDIA Open-H3 2K refinement—run locally on your GPU or one-click on Google Colab.'
               )
             }}
           </p>
@@ -77,7 +77,7 @@
           <!-- Primary Entry Link to the Directory -->
           <div class="cinema-cta-row">
             <button class="btn cta-glow" type="button" @click="enterDirectory">
-              🚀 {{ t('进入模型百科与工作流目录 →', 'Enter Model & Workflow Directory →') }}
+              🚀 {{ t('进入模型百科与 2K 工作流目录 →', 'Enter Model & 2K Workflow Directory →') }}
             </button>
           </div>
 
@@ -160,51 +160,51 @@
             </div>
           </div>
 
-          <!-- 3 Sleek Visual Capability Cards (Clicking any enters the Directory) -->
+          <!-- 3 Sleek Visual Capability Cards (Clicking any enters the corresponding LIVE Module) -->
           <div class="showcase-highlights" style="text-align: start; width: 100%;">
-            <div class="highlight-card" @click="selectItem('h3-base')">
+            <div class="highlight-card" @click="selectItem('h3-pika-lora')">
+              <div class="highlight-card-top">
+                <span class="pillar-icon">⚡</span>
+                <span class="pill live">LIVE</span>
+              </div>
+              <h3>{{ t('MiniMax + Pika Flex 6 步一采', 'MiniMax + Pika Flex 6-Step Pass 1') }}</h3>
+              <p>
+                {{
+                  t(
+                    '官方 Ref2VA INT8 底模串联 Pika H3 Flex 双 LoRA，仅需 6 步即可在本地或云端直出带立体原声的高动态视频。',
+                    'Official Ref2VA INT8 backbone chained with Pika H3 Flex dual LoRAs—generate expressive audio-video in just 6 steps.'
+                  )
+                }}
+              </p>
+            </div>
+
+            <div class="highlight-card" @click="selectItem('h3-standalone-2k')">
+              <div class="highlight-card-top">
+                <span class="pillar-icon">💎</span>
+                <span class="pill live">LIVE</span>
+              </div>
+              <h3>{{ t('单独上传视频 → 英伟达 2K 精修', 'Standalone Video → NVIDIA 2K Refine') }}</h3>
+              <p>
+                {{
+                  t(
+                    '上传任意低清视频草稿 (draft.mp4)，通过 3D 潜空间放大与 Open-H3 3 步 Euler 精修，直出 2K (2560×1440) 保脸成片。',
+                    'Upload any low-res draft MP4 and refine it to 2K (2560×1440) in 3 Euler steps with Face-Lock identity protection.'
+                  )
+                }}
+              </p>
+            </div>
+
+            <div class="highlight-card" @click="selectItem('h3-pika-2k-all')">
               <div class="highlight-card-top">
                 <span class="pillar-icon">🎬</span>
                 <span class="pill live">LIVE</span>
               </div>
-              <h3>{{ t('原生音画同生电影引擎', 'Native Audio-Visual Cinema') }}</h3>
+              <h3>{{ t('全流程一体：Pika 6步 + 2K 二采', 'Full Pipeline: Pika 6-Step + 2K Pass 2') }}</h3>
               <p>
                 {{
                   t(
-                    '画面动态、人物口型、巨兽咆哮与环境物理音效在同一扩散过程同步生成，直出带音轨 MP4。',
-                    'Visual motion, lip sync, creature roars, and environmental foley generated jointly in a single diffusion pass.'
-                  )
-                }}
-              </p>
-            </div>
-
-            <div class="highlight-card" @click="selectItem('moss-base')">
-              <div class="highlight-card-top">
-                <span class="pillar-icon">📸</span>
-                <span class="tag">MOSS 5B SFT</span>
-              </div>
-              <h3>{{ t('零塑料感真实光学摄影', 'True Optical Photorealism') }}</h3>
-              <p>
-                {{
-                  t(
-                    '真实皮肤毛孔、胶片颗粒与自然环境光比，为视频一采锁脸与分镜提供电影级母片。',
-                    'Authentic skin micro-texture, natural lighting ratios, and filmic grain for character reference plates.'
-                  )
-                }}
-              </p>
-            </div>
-
-            <div class="highlight-card" @click="selectItem('yue2-song')">
-              <div class="highlight-card-top">
-                <span class="pillar-icon">🎵</span>
-                <span class="tag">YUE2 & DRAMA3</span>
-              </div>
-              <h3>{{ t('全曲交响与多角色剧场', 'Full-Song & Multi-Voice Drama') }}</h3>
-              <p>
-                {{
-                  t(
-                    '支持完整人声编曲歌曲生成与多角色零样本音色克隆广播剧，构建完整视听工业管线。',
-                    'Complete vocal song arrangement and multi-speaker zero-shot voice cloning for audio drama production.'
+                    '单工作流一气呵成：一采 0.4MP 6 步锁自然大动态，自动分离音画潜变量 3D 放大，二采 3 步直出 1080p/2K 有声大片。',
+                    'Single unified ComfyUI workflow: 6-step 0.4MP Pass 1 + 3D AV latent split/upscale + 3-step Open-H3 2K Pass 2.'
                   )
                 }}
               </p>
@@ -287,7 +287,7 @@
         <!-- Category Sections -> Expandable Series Groups -> Sub-items -->
         <div v-for="section in catalog" :key="section.id" class="nav-section">
           <div class="nav-title">
-            <span>{{ section.icon }}</span>
+            <span v-if="section.icon">{{ section.icon }}</span>
             <span>{{ tr(section.title) }}</span>
           </div>
 

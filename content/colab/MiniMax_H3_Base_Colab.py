@@ -322,7 +322,31 @@ def expected_size(repo: str, rev: str, filename: str):
     return size
 
 
-def download_one_subprocess(item, disable_xet: bool = False):
+def _disable_hf_xet_runtime():
+    """冷门分块 / 429 兜底：当前进程立即关闭 hf-xet，切回普通 HTTP 直下。"""
+    os.environ["HF_HUB_DISABLE_XET"] = "1"
+    os.environ.pop("HF_XET_HIGH_PERFORMANCE", None)
+    try:
+        import huggingface_hub.constants as hf_consts
+        hf_consts.HF_HUB_DISABLE_XET = True
+    except Exception:
+        pass
+    try:
+        import huggingface_hub.utils._runtime as hf_runtime
+        hf_runtime._is_xet_available = False
+        hf_runtime.is_xet_available = lambda: False
+    except Exception:
+        pass
+    try:
+        import huggingface_hub.file_download as hf_fd
+        hf_fd.is_xet_available = lambda: False
+    except Exception:
+        pass
+
+
+def download_one(item):
+    from huggingface_hub import hf_hub_download
+
     repo, rev, filename, category = item
     dst_dir = COMFY / "models" / category
     dst_dir.mkdir(parents=True, exist_ok=True)
@@ -334,29 +358,31 @@ def download_one_subprocess(item, disable_xet: bool = False):
         if expect is None or got == expect:
             print(f"⏩ 已就绪: {target.name} ({got / 1024 ** 3:.2f} GB)", flush=True)
             return target
+        try:
+            target.unlink()
+        except Exception:
+            pass
 
-    mode_tag = "HTTP 直下" if disable_xet else "hf-xet 加速"
-    print(f"⬇️ 开始下载 [{mode_tag}]: {target.name}", flush=True)
-
-    env = os.environ.copy()
-    if disable_xet:
-        env["HF_HUB_DISABLE_XET"] = "1"
-        env.pop("HF_XET_HIGH_PERFORMANCE", None)
-    else:
-        env["HF_XET_HIGH_PERFORMANCE"] = "1"
-
-    dl_code = (
-        "import os, shutil; from pathlib import Path; from huggingface_hub import hf_hub_download; "
-        f"p = Path(hf_hub_download(repo_id={repo!r}, revision={rev!r}, filename={filename!r}, "
-        f"local_dir={str(dst_dir)!r}, token=os.getenv('HF_TOKEN') or None)); "
-        f"t = Path({str(target)!r}); "
-        "if p.resolve() != t.resolve():\n"
-        "    if t.exists() or t.is_symlink(): t.unlink()\n"
-        "    try: t.symlink_to(p)\n"
-        "    except Exception: shutil.copy2(p, t)\n"
+    print(f"⬇️ 开始下载: {target.name}", flush=True)
+    downloaded = Path(
+        hf_hub_download(
+            repo_id=repo,
+            revision=rev,
+            filename=filename,
+            local_dir=str(dst_dir),
+            token=get_secret("HF_TOKEN") or None,
+        )
     )
-    p = subprocess.run([sys.executable, "-c", dl_code], env=env, check=False)
-    if p.returncode != 0 or not target.exists():
+
+    if downloaded.resolve() != target.resolve():
+        if target.exists() or target.is_symlink():
+            target.unlink()
+        try:
+            target.symlink_to(downloaded)
+        except Exception:
+            shutil.copy2(downloaded, target)
+
+    if not target.exists():
         raise RuntimeError(f"下载失败: {target.name}")
 
     got = target.stat().st_size
@@ -367,9 +393,10 @@ def download_one_subprocess(item, disable_xet: bool = False):
 
 
 def download_all_base_models():
+    os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"
     failed = []
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        fmap = {pool.submit(download_one_subprocess, item, False): item for item in BASE_MODELS}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        fmap = {pool.submit(download_one, item): item for item in BASE_MODELS}
         for fut in as_completed(fmap):
             item = fmap[fut]
             try:
@@ -378,6 +405,10 @@ def download_all_base_models():
                 print(f"⚠️ Xet 通道异常，转入 HTTP 兜底: {Path(item[2]).name} ({exc})", flush=True)
                 failed.append(item)
 
+    if not failed:
+        return
+
+    _disable_hf_xet_runtime()
     for item in failed:
         name = Path(item[2]).name
         last_err = None
@@ -386,7 +417,7 @@ def download_all_base_models():
                 print(f"⏳ 等待 {wait_s}s 后重试 {name} ({attempt}/3)...", flush=True)
                 time.sleep(wait_s)
             try:
-                download_one_subprocess(item, disable_xet=True)
+                download_one(item)
                 last_err = None
                 break
             except Exception as exc:
