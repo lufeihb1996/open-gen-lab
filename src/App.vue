@@ -929,12 +929,40 @@ function getOrCreateVisitorId() {
   try {
     let vid = localStorage.getItem('ogl_visitor_id')
     if (!vid) {
-      vid = 'uv_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now().toString(36)
+      const cookieMatch = document.cookie.match(/(?:^|;\s*)ogl_vid=([^;]+)/)
+      if (cookieMatch && cookieMatch[1]) {
+        vid = decodeURIComponent(cookieMatch[1])
+      } else {
+        vid = 'uv_' + Math.random().toString(36).slice(2, 11) + '_' + Date.now().toString(36)
+      }
       localStorage.setItem('ogl_visitor_id', vid)
     }
+    document.cookie = `ogl_vid=${encodeURIComponent(vid)}; path=/; max-age=31536000; SameSite=Lax`
     return vid
   } catch {
     return 'uv_session_' + Math.random().toString(36).slice(2, 10)
+  }
+}
+
+function hasBeenCountedAsUV() {
+  try {
+    if (localStorage.getItem('ogl_uv_counted_v1') === '1') return true
+    if (document.cookie.includes('ogl_uv_counted_v1=1')) {
+      localStorage.setItem('ogl_uv_counted_v1', '1')
+      return true
+    }
+  } catch {
+    // ignore
+  }
+  return false
+}
+
+function markCountedAsUV() {
+  try {
+    localStorage.setItem('ogl_uv_counted_v1', '1')
+    document.cookie = 'ogl_uv_counted_v1=1; path=/; max-age=31536000; SameSite=Lax'
+  } catch {
+    // ignore
   }
 }
 
@@ -947,9 +975,12 @@ async function pingTelemetry(action = 'heartbeat') {
     })
     if (res.ok) {
       const data = await res.json()
+      if (action === 'new_visit') {
+        markCountedAsUV()
+      }
       if (typeof data.online === 'number') onlineUsers.value = data.online
-      if (typeof data.views === 'number') totalViews.value = data.views
-      if (typeof data.copies === 'number') totalCopies.value = data.copies
+      if (typeof data.views === 'number') totalViews.value = Math.max(totalViews.value, data.views)
+      if (typeof data.copies === 'number') totalCopies.value = Math.max(totalCopies.value, data.copies)
       if (presenceChannel && action !== 'heartbeat') {
         presenceChannel.postMessage({ type: 'sync', ...data })
       }
@@ -1006,7 +1037,8 @@ function initTelemetry() {
     }
   }
 
-  pingTelemetry('visit')
+  const initialAction = hasBeenCountedAsUV() ? 'visit' : 'new_visit'
+  pingTelemetry(initialAction)
 
   presenceTimer = setInterval(() => {
     pingTelemetry('heartbeat')
