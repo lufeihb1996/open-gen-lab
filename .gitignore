@@ -1,0 +1,7 @@
+node_modules
+dist
+.vercel
+.telemetry-data.json
+__pycache__/
+*.pyc
+.DS_Store

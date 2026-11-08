@@ -1,0 +1,272 @@
+{
+  "1": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "Continue the motion naturally from the starting frame. The character slowly looks up toward the sky as wind gently moves her hair, with soft ambient breeze sound."
+    },
+    "_meta": {
+      "title": "1. 正向提示词 (Prompt)"
+    }
+  },
+  "119": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
+    },
+    "_meta": {
+      "title": "2. 视频解码器 (Video VAE INT8)"
+    }
+  },
+  "120": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+    },
+    "_meta": {
+      "title": "3. 音频解码器 (Audio VAE FP32)"
+    }
+  },
+  "128": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+      "type": "minimax",
+      "device": "default"
+    },
+    "_meta": {
+      "title": "4. 多模态视觉/文本编码器 (Qwen3-VL 32B INT8)"
+    }
+  },
+  "127": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {
+      "title": "5. MiniMax H3 官方首尾帧主干 (FL2VA Pruned INT8)"
+    }
+  },
+  "142": {
+    "class_type": "MiniMaxH3SigmaShift",
+    "inputs": {
+      "model": [
+        "127",
+        0
+      ],
+      "shift_video": 12.0,
+      "shift_audio": 3.0
+    },
+    "_meta": {
+      "title": "6. 音画信噪比时间步偏移 (Video=12.0, Audio=3.0)"
+    }
+  },
+  "131": {
+    "class_type": "MiniMaxH3ReferenceToVideo",
+    "inputs": {
+      "clip": [
+        "128",
+        0
+      ],
+      "vae": [
+        "119",
+        0
+      ],
+      "audio_vae": [
+        "120",
+        0
+      ],
+      "prompt": [
+        "1",
+        0
+      ],
+      "width": 864,
+      "height": 480,
+      "length": 124,
+      "ref_image_size": "match"
+    },
+    "_meta": {
+      "title": "7. 文生音视频条件与潜空间 (864x480 · 124帧)"
+    }
+  },
+  "129": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": 42
+    },
+    "_meta": {
+      "title": "8. 随机种子 (RandomNoise)"
+    }
+  },
+  "135": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "res_multistep"
+    },
+    "_meta": {
+      "title": "9. 采样算法 (res_multistep)"
+    }
+  },
+  "124": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "142",
+        0
+      ],
+      "scheduler": "simple",
+      "steps": 20,
+      "denoise": 1.0
+    },
+    "_meta": {
+      "title": "10. 步数调度器 (官方基础版 20 步)"
+    }
+  },
+  "126": {
+    "class_type": "BasicGuider",
+    "inputs": {
+      "model": [
+        "142",
+        0
+      ],
+      "conditioning": [
+        "903",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "11. 基础条件引导 (BasicGuider)"
+    }
+  },
+  "125": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "129",
+        0
+      ],
+      "guider": [
+        "126",
+        0
+      ],
+      "sampler": [
+        "135",
+        0
+      ],
+      "sigmas": [
+        "124",
+        0
+      ],
+      "latent_image": [
+        "903",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "12. 核心音视频联合采样器 (SamplerCustomAdvanced)"
+    }
+  },
+  "122": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "125",
+        0
+      ],
+      "vae": [
+        "119",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "13. 画面潜变量解码 (VAEDecode)"
+    }
+  },
+  "121": {
+    "class_type": "VAEDecodeAudio",
+    "inputs": {
+      "samples": [
+        "125",
+        0
+      ],
+      "vae": [
+        "120",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "14. 声音潜变量解码 (VAEDecodeAudio)"
+    }
+  },
+  "130": {
+    "class_type": "CreateVideo",
+    "inputs": {
+      "images": [
+        "122",
+        0
+      ],
+      "audio": [
+        "121",
+        0
+      ],
+      "fps": 24,
+      "bit_depth": 8
+    },
+    "_meta": {
+      "title": "15. 音画合成视频 (24 FPS)"
+    }
+  },
+  "92": {
+    "class_type": "SaveVideo",
+    "inputs": {
+      "video": [
+        "130",
+        0
+      ],
+      "format": "auto",
+      "codec": "auto",
+      "filename_prefix": "minimax_h3/base_fl2va_i2v"
+    },
+    "_meta": {
+      "title": "16. 保存视频 (SaveVideo)"
+    }
+  },
+  "902": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "start_frame.png"
+    },
+    "_meta": {
+      "title": "2. 首帧引导图 (第 0 帧起始画面)"
+    }
+  },
+  "903": {
+    "class_type": "MiniMaxH3AddGuide",
+    "inputs": {
+      "positive": [
+        "131",
+        0
+      ],
+      "latent": [
+        "131",
+        1
+      ],
+      "vae": [
+        "119",
+        0
+      ],
+      "audio_vae": [
+        "120",
+        0
+      ],
+      "image": [
+        "902",
+        0
+      ],
+      "frame_idx": 0
+    },
+    "_meta": {
+      "title": "8. 注入首帧引导 (MiniMaxH3AddGuide · frame_idx=0)"
+    }
+  }
+}
