@@ -92,8 +92,9 @@
                   autoplay
                   loop
                   playsinline
-                  preload="metadata"
+                  preload="auto"
                   :muted="unmutedIndex !== 1"
+                  @click="toggleSound(1)"
                 ></video>
 
                 <div class="cinema-video-overlay-top">
@@ -130,8 +131,9 @@
                   autoplay
                   loop
                   playsinline
-                  preload="metadata"
+                  preload="auto"
                   :muted="unmutedIndex !== 2"
+                  @click="toggleSound(2)"
                 ></video>
 
                 <div class="cinema-video-overlay-top">
@@ -800,12 +802,60 @@ const sidebarOpen = ref(false)
 const toastMsg = ref('')
 let toastTimer = null
 
-// Dual Showcase Video Sound Control (0 = both muted, 1 = video 1 unmuted, 2 = video 2 unmuted)
+// Dual Showcase Video Sound Control (Default 1 = Video 1 unmuted with sound on load)
 const videoRef1 = ref(null)
 const videoRef2 = ref(null)
-const unmutedIndex = ref(0)
+const unmutedIndex = ref(1)
+let removeUnlockListeners = null
+
+function clearUnlockListeners() {
+  if (removeUnlockListeners) {
+    removeUnlockListeners()
+    removeUnlockListeners = null
+  }
+}
+
+function tryAutoPlayWithSound() {
+  const v1 = videoRef1.value
+  const v2 = videoRef2.value
+  if (v2) {
+    v2.muted = true
+    v2.play().catch(() => {})
+  }
+  if (!v1) return
+
+  v1.muted = false
+  v1.volume = 1.0
+  const p = v1.play()
+  if (p && typeof p.then === 'function') {
+    p.then(() => {
+      unmutedIndex.value = 1
+      clearUnlockListeners()
+    }).catch(() => {
+      // Browser blocked unmuted autoplay before first gesture: keep video playing and unmute on first touch/click
+      v1.muted = true
+      v1.play().catch(() => {})
+
+      const unlockAudio = () => {
+        if (currentItemId.value === 'home' && videoRef1.value && unmutedIndex.value === 1) {
+          videoRef1.value.muted = false
+          videoRef1.value.volume = 1.0
+          videoRef1.value.play().catch(() => {})
+        }
+        clearUnlockListeners()
+      }
+
+      const events = ['pointerdown', 'touchstart', 'click', 'keydown']
+      events.forEach(ev => window.addEventListener(ev, unlockAudio, { once: true, passive: true }))
+      removeUnlockListeners = () => {
+        events.forEach(ev => window.removeEventListener(ev, unlockAudio))
+      }
+    })
+  }
+}
 
 function toggleSound(idx) {
+  clearUnlockListeners()
   if (unmutedIndex.value === idx) {
     unmutedIndex.value = 0
   } else {
@@ -813,11 +863,17 @@ function toggleSound(idx) {
   }
   if (videoRef1.value) {
     videoRef1.value.muted = unmutedIndex.value !== 1
-    if (unmutedIndex.value === 1) videoRef1.value.play().catch(() => {})
+    if (unmutedIndex.value === 1) {
+      videoRef1.value.volume = 1.0
+      videoRef1.value.play().catch(() => {})
+    }
   }
   if (videoRef2.value) {
     videoRef2.value.muted = unmutedIndex.value !== 2
-    if (unmutedIndex.value === 2) videoRef2.value.play().catch(() => {})
+    if (unmutedIndex.value === 2) {
+      videoRef2.value.volume = 1.0
+      videoRef2.value.play().catch(() => {})
+    }
   }
 }
 
@@ -1059,8 +1115,10 @@ function syncFromHash() {
 function goHome() {
   window.location.hash = '#/home'
   currentItemId.value = 'home'
+  unmutedIndex.value = 1
   sidebarOpen.value = false
   window.scrollTo({ top: 0, behavior: 'smooth' })
+  setTimeout(tryAutoPlayWithSound, 80)
 }
 
 function selectItem(id) {
@@ -1138,9 +1196,11 @@ onMounted(() => {
   initTelemetry()
   syncFromHash()
   window.addEventListener('hashchange', syncFromHash)
+  setTimeout(tryAutoPlayWithSound, 80)
 })
 
 onUnmounted(() => {
+  clearUnlockListeners()
   window.removeEventListener('hashchange', syncFromHash)
   window.removeEventListener('beforeunload', handleUnload)
   if (presenceTimer) clearInterval(presenceTimer)
